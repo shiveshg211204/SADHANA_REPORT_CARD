@@ -70,7 +70,7 @@
         <!-- AUTH WARNING BANNER (Visible if config placeholders are used) -->
         <div id="auth-warning-banner" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 hidden" role="alert">
             <p class="font-bold">CRITICAL CONFIGURATION ERROR DETECTED</p>
-            <p class="text-sm">Please update the `DEFAULT_FIREBASE_CONFIG` in the script block below with your actual project keys. Until this is fixed, data saving and secure access will fail. (**Secure ID is currently N/A**)</p>
+            <p class="text-sm">Please update the **Firebase Configuration** in the script block below with your actual project keys. Until this is fixed, data saving and secure access will fail. (**Secure ID is currently N/A**)</p>
         </div>
 
         <!-- Auth Info: Now showing the secure (hidden) Firebase UID and the declared Name/ID -->
@@ -118,7 +118,7 @@
                 
                 <form id="sadhana-form">
 
-                    <!-- NEW: MENTOR AUTHORIZATION FIELD -->
+                    <!-- MENTOR AUTHORIZATION FIELD -->
                     <div class="mb-6 pb-4 border-b border-gray-200 bg-yellow-50 p-4 rounded-lg">
                         <h3 class="text-xl font-bold text-red-600 mb-3 flex items-center">
                             <i class="fas fa-user-shield mr-2"></i> Mentor Authorization
@@ -131,7 +131,6 @@
                             *This registers your mentor, allowing them access to your reports according to the security rules.*
                         </p>
                     </div>
-                    <!-- END NEW FIELD -->
                     
                     <!-- CHANTING -->
                     <h3 class="text-xl font-bold text-orange-600 mb-3 border-b pb-2"><span class="text-green-700 font-extrabold mr-2">HARE KRISHNA</span> Japa Chanting</h3>
@@ -268,16 +267,25 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, addDoc, onSnapshot, collection, query, orderBy, serverTimestamp, setLogLevel, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- HARDCODED FALLBACKS FOR EXTERNAL ENVIRONMENT ---
-        // !!! IMPORTANT: REPLACE THESE PLACEHOLDERS WITH YOUR ACTUAL FIREBASE CONFIGURATION !!!
+        // =================================================================================
+        // !!! FIREBASE CONFIGURATION - YOU MUST EDIT THIS BLOCK !!!
+        // =================================================================================
         const DEFAULT_FIREBASE_CONFIG = {
-            apiKey: "AIzaSyBhMLyPLJ8s0P56uXlIqIFcbjvL3Am5TJg",
-            authDomain: "flutter-ai-playground-452d7.firebaseapp.com",
+            // 🛑 1. Replace "..." with your actual API Key (from Project Settings > Web App)
+            apiKey: "AIzaSyBhMLyPLJ8s0P56uXlIqIFcbjvL3Am5TJg", 
+            
+            // 🛑 2. Replace "default-project-id" with your actual Project ID (e.g., "iskcon-app-12345")
             projectId: "flutter-ai-playground-452d7",
+
+            // 🛑 3. Replace these values with the rest of your config properties (Auth Domain, Storage Bucket, etc.)
+            authDomain: "flutter-ai-playground-452d7.firebaseapp.com",
             storageBucket: "flutter-ai-playground-452d7.firebasestorage.app",
             messagingSenderId: "761849874992",
             appId: "1:761849874992:web:4de39de02bffacf7e53bf5"
         };
+        // =================================================================================
+        // !!! END CONFIGURATION BLOCK !!!
+        // =================================================================================
         
         // Global variables provided by the Canvas environment (with fallbacks)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -376,7 +384,7 @@
         // --- FIREBASE INITIALIZATION & AUTHENTICATION ---
         async function initializeFirebase() {
             
-            // Check if essential config is available (even the fallback)
+            // Check if essential config is available (if projectId is the placeholder, it fails)
             if (!firebaseConfig || !firebaseConfig.projectId || firebaseConfig.projectId === "default-project-id") {
                 console.error("Firebase configuration is missing or using placeholder defaults. App will function, but data persistence/sharing will fail.");
                 document.getElementById('loading-indicator').classList.add('hidden');
