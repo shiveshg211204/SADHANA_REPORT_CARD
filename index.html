@@ -247,7 +247,7 @@
         import { getFirestore, doc, addDoc, onSnapshot, collection, query, orderBy, serverTimestamp, setLogLevel, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global variables provided by the Canvas environment
-        const DEFAULT_FIREBASE_CONFIG = {
+        const firebaseConfig = {
             apiKey: "AIzaSyDaS1234567890aBcdEfGhIjKlMnOpQrS", // Your 39-character key
             authDomain: "iskcon-sadhana-2025.firebaseapp.com",
             projectId: "iskcon-sadhana-2025", 
@@ -636,9 +636,10 @@
         }
         
         // Start Firebase initialization
-        initializeFirebase();
+        const app = initializeApp(firebaseConfig);
     </script>
 </body>
 </html>
+
 
 
