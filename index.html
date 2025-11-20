@@ -67,6 +67,12 @@
     </header>
 
     <div class="max-w-4xl mx-auto">
+        <!-- AUTH WARNING BANNER (Visible if config placeholders are used) -->
+        <div id="auth-warning-banner" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 hidden" role="alert">
+            <p class="font-bold">CRITICAL CONFIGURATION ERROR DETECTED</p>
+            <p class="text-sm">Please update the `DEFAULT_FIREBASE_CONFIG` in the script block below with your actual project keys. Until this is fixed, data saving and secure access will fail. (**Secure ID is currently N/A**)</p>
+        </div>
+
         <!-- Auth Info: Now showing the secure (hidden) Firebase UID and the declared Name/ID -->
         <div id="auth-info" class="sadhana-card text-xs text-center break-all">
             <i class="fas fa-fingerprint text-gray-500 mr-2"></i> Secure ID: <span id="user-id-display-secure" class="font-mono text-gray-400">...</span> (Used internally)
@@ -83,7 +89,7 @@
         </div>
 
         <!-- Devotee Report Form View -->
-        <div id="devotee-view" class="hidden">
+        <div id="devotee-view">
             <h2 class="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
                 <i class="fas fa-clipboard-list mr-2 text-orange-600"></i> Daily Sadhana Submission
             </h2>
@@ -111,6 +117,22 @@
                 </div>
                 
                 <form id="sadhana-form">
+
+                    <!-- NEW: MENTOR AUTHORIZATION FIELD -->
+                    <div class="mb-6 pb-4 border-b border-gray-200 bg-yellow-50 p-4 rounded-lg">
+                        <h3 class="text-xl font-bold text-red-600 mb-3 flex items-center">
+                            <i class="fas fa-user-shield mr-2"></i> Mentor Authorization
+                        </h3>
+                        <label class="block">
+                            <span class="text-gray-700 font-semibold">Your Mentor/Host's Secure ID:</span>
+                            <input type="text" id="mentor-secure-id" placeholder="Paste your mentor's Secure ID here (MANDATORY for access)" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 text-sm font-mono">
+                        </label>
+                        <p class="text-xs text-gray-500 mt-1">
+                            *This registers your mentor, allowing them access to your reports according to the security rules.*
+                        </p>
+                    </div>
+                    <!-- END NEW FIELD -->
+                    
                     <!-- CHANTING -->
                     <h3 class="text-xl font-bold text-orange-600 mb-3 border-b pb-2"><span class="text-green-700 font-extrabold mr-2">HARE KRISHNA</span> Japa Chanting</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -247,20 +269,21 @@
         import { getFirestore, doc, addDoc, onSnapshot, collection, query, orderBy, serverTimestamp, setLogLevel, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- HARDCODED FALLBACKS FOR EXTERNAL ENVIRONMENT ---
-        // This ensures the app doesn't crash if run outside the environment.
+        // !!! IMPORTANT: REPLACE THESE PLACEHOLDERS WITH YOUR ACTUAL FIREBASE CONFIGURATION !!!
         const DEFAULT_FIREBASE_CONFIG = {
-            apiKey: "AIzaSy...", // Placeholder - must be replaced with your actual key if deploying!
-            authDomain: "projectId.firebaseapp.com",
-            projectId: "default-project-id",
-            storageBucket: "projectId.appspot.com",
-            messagingSenderId: "00000000000",
-            appId: "1:00000000000:web:0000000000000000000000"
+            apiKey: "AIzaSyBhMLyPLJ8s0P56uXlIqIFcbjvL3Am5TJg",
+            authDomain: "flutter-ai-playground-452d7.firebaseapp.com",
+            projectId: "flutter-ai-playground-452d7",
+            storageBucket: "flutter-ai-playground-452d7.firebasestorage.app",
+            messagingSenderId: "761849874992",
+            appId: "1:761849874992:web:4de39de02bffacf7e53bf5"
         };
         
         // Global variables provided by the Canvas environment (with fallbacks)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : DEFAULT_FIREBASE_CONFIG;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : DEFAULT_FIREBASE_CONFIG;
 
         let app;
         let db;
@@ -330,6 +353,25 @@
             }
         });
 
+        // Function to create/update the public mapping (Name -> Secure UID)
+        async function updateDevoteeMap(devoteeName) {
+            if (!secureUserId) return;
+
+            // Path: /artifacts/{appId}/public/data/devotee_id_map/{devoteeName}
+            const mapDocRef = doc(db, `artifacts/${appId}/public/data/devotee_id_map`, devoteeName);
+            
+            try {
+                await setDoc(mapDocRef, {
+                    secureId: secureUserId,
+                    declaredName: devoteeName,
+                    lastUpdated: serverTimestamp()
+                }, { merge: true });
+                console.log(`Public map updated for ${devoteeName}`);
+            } catch (error) {
+                console.error("Error updating devotee map:", error);
+            }
+        }
+
 
         // --- FIREBASE INITIALIZATION & AUTHENTICATION ---
         async function initializeFirebase() {
@@ -340,6 +382,7 @@
                 document.getElementById('loading-indicator').classList.add('hidden');
                 document.getElementById('devotee-view').classList.remove('hidden'); // Show content even on failure
                 document.getElementById('host-view').classList.add('hidden');
+                document.getElementById('auth-warning-banner').classList.remove('hidden');
                 showMessage('devotee-message', 'DATABASE ERROR: Firebase is not correctly configured. Data will not be saved.', 'text-red-600');
                 isAuthReady = true;
                 setView('devotee');
@@ -358,6 +401,7 @@
                         secureUserId = user.uid;
                         document.getElementById('user-id-display-secure').textContent = secureUserId;
                         isAuthReady = true;
+                        document.getElementById('auth-warning-banner').classList.add('hidden');
                         console.log("Firebase Auth Ready. Secure UID:", secureUserId);
                         
                         updateDevoteeNameDisplay();
@@ -370,6 +414,7 @@
                         secureUserId = null;
                         document.getElementById('user-id-display-secure').textContent = 'N/A - Sign In Failed';
                         isAuthReady = true;
+                        document.getElementById('auth-warning-banner').classList.remove('hidden');
                         console.log("User signed out or failed to sign in.");
                         setView('devotee'); // Ensure view is set even on sign-out
                     }
@@ -391,23 +436,23 @@
             }
         }
         
-        // Function to create/update the public mapping (Name -> Secure UID)
-        async function updateDevoteeMap(devoteeName) {
-            if (!secureUserId) return;
+        // Function to register the mentor relationship
+        async function updateMentorLink(devoteeName, mentorSecureId) {
+            if (!devoteeName || !mentorSecureId) return;
 
-            // Path: /artifacts/{appId}/public/data/devotee_id_map/{devoteeName}
-            const mapDocRef = doc(db, `artifacts/${appId}/public/data/devotee_id_map`, devoteeName);
-            
+            // Path: /artifacts/{appId}/public/data/mentor_links/{devoteeName}
+            const linkDocRef = doc(db, `artifacts/${appId}/public/data/mentor_links`, devoteeName);
+
             try {
-                await setDoc(mapDocRef, {
-                    secureId: secureUserId,
-                    declaredName: devoteeName,
-                    lastUpdated: serverTimestamp()
+                await setDoc(linkDocRef, {
+                    devoteeName: devoteeName,
+                    mentorSecureId: mentorSecureId,
+                    linkEstablished: serverTimestamp()
                 }, { merge: true });
-                console.log(`Public map updated for ${devoteeName}`);
+                console.log(`Mentor link established for ${devoteeName} to ${mentorSecureId}`);
             } catch (error) {
-                console.error("Error updating devotee map:", error);
-                // Displaying error but allowing the app to run
+                console.error("Error setting mentor link:", error);
+                showMessage('devotee-message', 'Warning: Could not save mentor link due to permissions.', 'text-orange-600');
             }
         }
 
@@ -449,9 +494,15 @@
                 return;
             }
 
+            const mentorSecureId = document.getElementById('mentor-secure-id').value.trim();
             if (!declaredDevoteeId) {
                 showMessage('devotee-message', 'Please declare your Devotee ID (Name) before submitting.', 'text-red-600');
                 document.getElementById('devotee-name-input').focus();
+                return;
+            }
+            if (!mentorSecureId) {
+                showMessage('devotee-message', 'Please enter your Mentor/Host Secure ID.', 'text-red-600');
+                document.getElementById('mentor-secure-id').focus();
                 return;
             }
 
@@ -459,7 +510,7 @@
 
             // Fetch form data
             const formData = {
-                devoteeId: declaredDevoteeId, // Include the name in the report data for context
+                devoteeId: declaredDevoteeId, // Used by rules to find mentor link
                 date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
                 rounds: parseInt(document.getElementById('rounds').value) || 0,
                 avgTime: parseFloat(document.getElementById('avg-time').value) || 0,
@@ -483,12 +534,17 @@
             const privateCollectionPath = `artifacts/${appId}/users/${secureUserId}/sadhana_reports`;
 
             try {
+                // 1. Register the Mentor Link (Mandatory for Host to see report)
+                await updateMentorLink(declaredDevoteeId, mentorSecureId);
+
+                // 2. Submit the Sadhana Report
                 await addDoc(collection(db, privateCollectionPath), formData);
-                showMessage('devotee-message', `Report for ${formData.date} submitted successfully!`, 'text-green-600');
+                
+                showMessage('devotee-message', `Report for ${formData.date} submitted successfully! Mentor link updated.`, 'text-green-600');
                 sadhanaForm.reset();
             } catch (error) {
                 console.error("Error submitting sadhana report:", error);
-                showMessage('devotee-message', 'Error submitting report. Permissions issue. Please ensure your Firebase rules allow write access to your private collection.', 'text-red-600');
+                showMessage('devotee-message', 'Error submitting report. Please check your Firebase config and security rules.', 'text-red-600');
             } finally {
                 showLoading(false);
             }
@@ -569,8 +625,8 @@
             }, (error) => {
                 showLoading(false);
                 console.error("Error fetching devotee reports:", error);
-                // This usually means the Host's ID is not authorized by the security rules to read the Devotee's secure ID collection.
-                showMessage('host-message', 'Permissions denied: Your Host ID may not be authorized to view these reports. Consult the system administrator and check your Firebase rules.', 'text-red-600');
+                // This means the Host's ID is not authorized by the security rules to read the Devotee's secure ID collection.
+                showMessage('host-message', 'Permissions denied: The devotee has not authorized your Secure ID as their mentor, or the Firebase rules are incorrect.', 'text-red-600');
                 
                 document.getElementById('devotee-profile-card').classList.add('hidden');
                 document.getElementById('reports-container').innerHTML = '';
