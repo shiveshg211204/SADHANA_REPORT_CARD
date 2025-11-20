@@ -247,9 +247,14 @@
         import { getFirestore, doc, addDoc, onSnapshot, collection, query, orderBy, serverTimestamp, setLogLevel, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global variables provided by the Canvas environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const firebaseConfig = {
+            apiKey: "AIzaSyBhMLyPLJ8s0P56uXlIqIFcbjvL3Am5TJg",
+            authDomain: "flutter-ai-playground-452d7.firebaseapp.com",
+            projectId: "flutter-ai-playground-452d7",
+            storageBucket: "flutter-ai-playground-452d7.firebasestorage.app",
+            messagingSenderId: "761849874992",
+            appId: "1:761849874992:web:4de39de02bffacf7e53bf5"
+        };
 
         let app;
         let db;
@@ -635,3 +640,4 @@
     </script>
 </body>
 </html>
+
