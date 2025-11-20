@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sri Guru's Compass: PBSC Sadhana Reporter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary: #FF9800; /* Deep Saffron/Orange for ISKCON theme */
+            --secondary: #4CAF50; /* Green for goodness/success */
+            --accent: #2196F3; /* Blue for calm/wisdom */
+            --background: #FFF8E1; /* Light cream/yellow background */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+        }
+        .sadhana-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #E68A00;
+        }
+        .btn-secondary {
+            background-color: var(--secondary);
+            color: white;
+            transition: background-color 0.2s;
+        }
+        .btn-secondary:hover {
+            background-color: #388E3C;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="p-4 min-h-screen">
+
+    <div id="loading-indicator" class="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin text-4xl text-yellow-600"></i>
+            <p class="mt-2 text-lg text-gray-700">Connecting to the divine database...</p>
+        </div>
+    </div>
+
+    <header class="text-center py-6">
+        <h1 class="text-4xl font-bold text-orange-700">Sri Guru's Compass</h1>
+        <p class="text-xl text-gray-600 mt-1">PBSC Sadhana Reporter</p>
+    </header>
+
+    <div class="max-w-4xl mx-auto">
+        <!-- Auth Info: Now showing the secure (hidden) Firebase UID and the declared Name/ID -->
+        <div id="auth-info" class="sadhana-card text-xs text-center break-all">
+            <i class="fas fa-fingerprint text-gray-500 mr-2"></i> Secure ID: <span id="user-id-display-secure" class="font-mono text-gray-400">...</span> (Used internally)
+        </div>
+
+        <!-- Main View Switcher -->
+        <div class="flex justify-center mb-6 space-x-4">
+            <button id="devotee-btn" class="flex-1 px-4 py-2 rounded-lg font-semibold btn-primary shadow-md" onclick="setView('devotee')">
+                <i class="fas fa-pencil-alt mr-2"></i> Devotee Report
+            </button>
+            <button id="host-btn" class="flex-1 px-4 py-2 rounded-lg font-semibold bg-gray-300 hover:bg-gray-400 text-gray-800 shadow-md" onclick="setView('host')">
+                <i class="fas fa-users-cog mr-2"></i> Host Dashboard
+            </button>
+        </div>
+
+        <!-- Devotee Report Form View -->
+        <div id="devotee-view" class="hidden">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
+                <i class="fas fa-clipboard-list mr-2 text-orange-600"></i> Daily Sadhana Submission
+            </h2>
+            <div class="sadhana-card">
+                
+                <!-- NEW: Devotee Name/ID Declaration -->
+                <div class="mb-6 pb-4 border-b border-gray-200">
+                    <h3 class="text-xl font-bold text-blue-600 mb-3 flex items-center">
+                        <i class="fas fa-user-tag mr-2"></i> Declare Your Devotee ID (Name)
+                    </h3>
+                    <label class="block">
+                        <span class="text-gray-700">Your Unique Devotee ID/Name (e.g., Krishna\_Das\_PBSC):</span>
+                        <input type="text" id="devotee-name-input" placeholder="Enter your unique name/ID here" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 text-lg font-mono">
+                    </label>
+                    <p class="text-xs text-red-500 mt-1">
+                        *This name is used by your mentor to find your reports. Please keep it unique and consistent.*
+                    </p>
+                    <p id="devotee-name-display" class="mt-3 text-center text-lg font-semibold text-green-700 hidden">
+                        Current Devotee ID: <span id="current-devotee-id"></span>
+                        <button onclick="copyCurrentDevoteeId()" class="ml-2 text-blue-500 hover:text-blue-700 transition duration-150 text-sm">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                        <p id="copy-message" class="text-xs text-green-500 mt-1 hidden">Copied!</p>
+                    </p>
+                </div>
+                
+                <form id="sadhana-form">
+                    <!-- CHANTING -->
+                    <h3 class="text-xl font-bold text-orange-600 mb-3 border-b pb-2"><span class="text-green-700 font-extrabold mr-2">HARE KRISHNA</span> Japa Chanting</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <label class="block">
+                            <span class="text-gray-700">No. of Rounds (16 ideal)</span>
+                            <input type="number" id="rounds" min="0" max="64" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </label>
+                        <label class="block">
+                            <span class="text-gray-700">Average Time (min/round)</span>
+                            <input type="number" id="avg-time" min="0" step="0.5" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </label>
+                        <label class="block">
+                            <span class="text-gray-700">Last Round Finished At (HH:MM)</span>
+                            <input type="time" id="last-round-time" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </label>
+                    </div>
+
+                    <!-- READING & HEARING -->
+                    <h3 class="text-xl font-bold text-orange-600 mb-3 border-b pb-2"><i class="fas fa-book-reader mr-2"></i> Reading & Hearing</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <label class="block">
+                            <span class="text-gray-700">SP Book Name (e.g., Nectar of Devotion)</span>
+                            <input type="text" id="sp-book-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </label>
+                        <label class="block">
+                            <span class="text-gray-700">SP Book Reading Duration (min)</span>
+                            <input type="number" id="sp-reading-duration" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </label>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <label class="block">
+                            <span class="text-gray-700">Personal Reading Duration (min)</span>
+                            <input type="number" id="personal-reading-duration" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </label>
+                        <label class="block">
+                            <span class="text-gray-700">Hearing Duration (min)</span>
+                            <input type="number" id="hearing-duration" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </label>
+                    </div>
+                    <label class="block mb-4">
+                        <span class="text-gray-700">Hearing Topic/Speaker</span>
+                        <input type="text" id="hearing-topic" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                    </label>
+
+                    <!-- SERVICES & STUDIES -->
+                    <h3 class="text-xl font-bold text-orange-600 mb-3 border-b pb-2"><i class="fas fa-hands-helping mr-2"></i> Service & Studies</h3>
+                    <label class="block mb-4">
+                        <span class="text-gray-700">Service Details (briefly describe service)</span>
+                        <input type="text" id="service-details" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                    </label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <label class="block">
+                            <span class="text-gray-700">Studies Subject/Topic (e.g., Bhakti Vriksha lesson)</span>
+                            <input type="text" id="study-topic" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </label>
+                        <label class="block">
+                            <span class="text-gray-700">Studies Duration (min)</span>
+                            <input type="number" id="study-duration" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </label>
+                    </div>
+
+                    <!-- SLEEP & COMMENTS -->
+                    <h3 class="text-xl font-bold text-orange-600 mb-3 border-b pb-2"><i class="fas fa-bed mr-2"></i> Sleep & Notes</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <label class="block">
+                            <span class="text-gray-700">Wake Up Time (HH:MM)</span>
+                            <input type="time" id="wake-up-time" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </label>
+                        <label class="block">
+                            <span class="text-gray-700">Day Rest / Slept At (HH:MM)</span>
+                            <input type="time" id="day-rest-time" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </label>
+                        <label class="block">
+                            <span class="text-gray-700">Total Sleep Duration (Hours)</span>
+                            <input type="number" id="sleep-duration" min="0" step="0.1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
+                        </label>
+                    </div>
+
+                    <label class="block mb-6">
+                        <span class="text-gray-700">Comments / Reflections for Counselor</span>
+                        <textarea id="comments" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"></textarea>
+                    </label>
+
+                    <button type="submit" class="btn-primary w-full py-3 rounded-lg text-lg font-bold shadow-lg">
+                        <i class="fas fa-cloud-upload-alt mr-2"></i> Submit Sadhana Report
+                    </button>
+                    <p id="devotee-message" class="mt-3 text-center text-green-600 font-semibold hidden"></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Host Dashboard View -->
+        <div id="host-view" class="hidden">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
+                <i class="fas fa-chart-line mr-2 text-blue-600"></i> Host Dashboard (Mentor View)
+            </h2>
+
+            <!-- Input to Fetch Devotee Data -->
+            <div class="sadhana-card bg-blue-50 border border-blue-200">
+                <p class="text-sm text-blue-800 mb-3">
+                    Enter the **Devotee ID (Name)** of the devotee who has authorized you to view their reports.
+                </p>
+                <div class="flex space-x-2">
+                    <input type="text" id="devotee-id-input" placeholder="Enter Devotee's Name/ID here" class="flex-grow rounded-md border-gray-300 shadow-sm p-2">
+                    <button onclick="fetchDevoteeReports()" class="btn-secondary px-4 py-2 rounded-lg font-semibold">
+                        <i class="fas fa-search"></i> Fetch Reports
+                    </button>
+                </div>
+                <p id="host-message" class="mt-3 text-center text-red-600 font-semibold hidden"></p>
+            </div>
+
+            <!-- Devotee Report Display Area -->
+            <div id="devotee-report-display" class="mt-6">
+                <div id="devotee-profile-card" class="sadhana-card bg-indigo-50 border border-indigo-200 hidden">
+                    <h3 class="text-xl font-bold text-indigo-700">
+                        Sadhana History for: <span id="fetched-devotee-id" class="font-mono text-base break-all"></span>
+                    </h3>
+                    <p id="no-reports-message" class="mt-2 text-gray-600 hidden">No sadhana reports found for this devotee.</p>
+                </div>
+
+                <!-- Reports Table/Cards -->
+                <div id="reports-container" class="space-y-4">
+                    <!-- Reports will be inserted here by JavaScript -->
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs (MUST use type="module") -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, query, orderBy, serverTimestamp, setLogLevel, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app;
+        let db;
+        let auth;
+        let secureUserId = null; // The unique Firebase UID (internal use)
+        let declaredDevoteeId = localStorage.getItem('declaredDevoteeId') || ''; // User-declared ID (Name)
+        let isAuthReady = false;
+
+        // Set Firebase logging level (optional, but good for debugging)
+        setLogLevel('error');
+
+        // Utility to show loading spinner
+        function showLoading(show) {
+            document.getElementById('loading-indicator').classList.toggle('hidden', !show);
+        }
+
+        // Utility to copy text to clipboard
+        window.copyCurrentDevoteeId = function() {
+            const idText = document.getElementById('current-devotee-id').textContent;
+            try {
+                const el = document.createElement('textarea');
+                el.value = idText;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                
+                const messageEl = document.getElementById('copy-message');
+                messageEl.classList.remove('hidden');
+                setTimeout(() => messageEl.classList.add('hidden'), 2000);
+            } catch (err) {
+                console.error('Could not copy text: ', err);
+            }
+        }
+
+        function updateDevoteeNameDisplay() {
+            const nameInput = document.getElementById('devotee-name-input');
+            const nameDisplay = document.getElementById('devotee-name-display');
+            const currentIdEl = document.getElementById('current-devotee-id');
+
+            if (declaredDevoteeId) {
+                nameInput.value = declaredDevoteeId;
+                nameInput.disabled = true;
+                currentIdEl.textContent = declaredDevoteeId;
+                nameDisplay.classList.remove('hidden');
+            } else {
+                nameInput.disabled = false;
+                nameDisplay.classList.add('hidden');
+            }
+        }
+        
+        // Listen for changes in the name input field and save it on blur
+        document.getElementById('devotee-name-input').addEventListener('blur', async (e) => {
+            const newName = e.target.value.trim();
+            if (newName && newName !== declaredDevoteeId) {
+                declaredDevoteeId = newName;
+                localStorage.setItem('declaredDevoteeId', declaredDevoteeId);
+                updateDevoteeNameDisplay();
+                
+                // Immediately update the public mapping when the name is set/changed
+                if (isAuthReady && secureUserId) {
+                    await updateDevoteeMap(newName);
+                    showMessage('devotee-message', 'Devotee ID (Name) saved and registered for mentor lookup!', 'text-blue-600');
+                } else {
+                    showMessage('devotee-message', 'Devotee ID (Name) saved locally. Log in to register for mentor lookup.', 'text-blue-600');
+                }
+            }
+        });
+
+
+        // --- FIREBASE INITIALIZATION & AUTHENTICATION ---
+        async function initializeFirebase() {
+            if (!firebaseConfig) {
+                console.error("Firebase configuration is missing.");
+                return;
+            }
+            showLoading(true);
+
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        secureUserId = user.uid;
+                        document.getElementById('user-id-display-secure').textContent = secureUserId;
+                        isAuthReady = true;
+                        console.log("Firebase Auth Ready. Secure UID:", secureUserId);
+                        
+                        updateDevoteeNameDisplay();
+                        if (declaredDevoteeId) {
+                            // Ensure the map is updated after successful auth if a name was set locally
+                            updateDevoteeMap(declaredDevoteeId);
+                        }
+                        setView('devotee'); 
+                    } else {
+                        secureUserId = null;
+                        document.getElementById('user-id-display-secure').textContent = 'N/A - Sign In Failed';
+                        isAuthReady = true;
+                        console.log("User signed out or failed to sign in.");
+                    }
+                    showLoading(false);
+                });
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Firebase initialization or sign-in failed:", error);
+                document.getElementById('user-id-display-secure').textContent = 'Error during sign-in.';
+                showLoading(false);
+            }
+        }
+        
+        // Function to create/update the public mapping (Name -> Secure UID)
+        async function updateDevoteeMap(devoteeName) {
+            if (!secureUserId) return;
+
+            // Path: /artifacts/{appId}/public/data/devotee_id_map/{devoteeName}
+            const mapDocRef = doc(db, `artifacts/${appId}/public/data/devotee_id_map`, devoteeName);
+            
+            try {
+                await setDoc(mapDocRef, {
+                    secureId: secureUserId,
+                    declaredName: devoteeName,
+                    lastUpdated: serverTimestamp()
+                }, { merge: true });
+                console.log(`Public map updated for ${devoteeName}`);
+            } catch (error) {
+                console.error("Error updating devotee map:", error);
+            }
+        }
+
+
+        // --- APP STATE MANAGEMENT ---
+
+        window.setView = function(view) {
+            const devoteeView = document.getElementById('devotee-view');
+            const hostView = document.getElementById('host-view');
+            const devoteeBtn = document.getElementById('devotee-btn');
+            const hostBtn = document.getElementById('host-btn');
+
+            if (view === 'devotee') {
+                devoteeView.classList.remove('hidden');
+                hostView.classList.add('hidden');
+                devoteeBtn.classList.add('btn-primary');
+                devoteeBtn.classList.remove('bg-gray-300', 'hover:bg-gray-400', 'text-gray-800');
+                hostBtn.classList.remove('btn-primary');
+                hostBtn.classList.add('bg-gray-300', 'hover:bg-gray-400', 'text-gray-800');
+            } else if (view === 'host') {
+                hostView.classList.remove('hidden');
+                devoteeView.classList.add('hidden');
+                hostBtn.classList.add('btn-primary');
+                hostBtn.classList.remove('bg-gray-300', 'hover:bg-gray-400', 'text-gray-800');
+                devoteeBtn.classList.remove('btn-primary');
+                devoteeBtn.classList.add('bg-gray-300', 'hover:bg-gray-400', 'text-gray-800');
+            }
+        }
+
+        // --- DEVOTEE FUNCTIONALITY ---
+
+        const sadhanaForm = document.getElementById('sadhana-form');
+        sadhanaForm.addEventListener('submit', handleSadhanaSubmission);
+
+        async function handleSadhanaSubmission(e) {
+            e.preventDefault();
+            if (!isAuthReady || !secureUserId) {
+                showMessage('devotee-message', 'Authentication not complete. Please wait.', 'text-red-600');
+                return;
+            }
+
+            if (!declaredDevoteeId) {
+                showMessage('devotee-message', 'Please declare your Devotee ID (Name) before submitting.', 'text-red-600');
+                document.getElementById('devotee-name-input').focus();
+                return;
+            }
+
+            showLoading(true);
+
+            // Fetch form data
+            const formData = {
+                devoteeId: declaredDevoteeId, // Include the name in the report data for context
+                date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+                rounds: parseInt(document.getElementById('rounds').value) || 0,
+                avgTime: parseFloat(document.getElementById('avg-time').value) || 0,
+                lastRoundTime: document.getElementById('last-round-time').value || null,
+                spBookName: document.getElementById('sp-book-name').value.trim(),
+                spReadingDuration: parseInt(document.getElementById('sp-reading-duration').value) || 0,
+                personalReadingDuration: parseInt(document.getElementById('personal-reading-duration').value) || 0,
+                hearingDuration: parseInt(document.getElementById('hearing-duration').value) || 0,
+                hearingTopic: document.getElementById('hearing-topic').value.trim(),
+                serviceDetails: document.getElementById('service-details').value.trim(),
+                studyTopic: document.getElementById('study-topic').value.trim(),
+                studyDuration: parseInt(document.getElementById('study-duration').value) || 0,
+                wakeUpTime: document.getElementById('wake-up-time').value || null,
+                dayRestTime: document.getElementById('day-rest-time').value || null,
+                sleepDuration: parseFloat(document.getElementById('sleep-duration').value) || 0,
+                comments: document.getElementById('comments').value.trim(),
+                timestamp: serverTimestamp(),
+            };
+
+            // *** FIX: Use secureUserId in the collection path for write authorization ***
+            // Path: /artifacts/{appId}/users/{secureUserId}/sadhana_reports
+            const privateCollectionPath = `artifacts/${appId}/users/${secureUserId}/sadhana_reports`;
+
+            try {
+                await addDoc(collection(db, privateCollectionPath), formData);
+                showMessage('devotee-message', `Report for ${formData.date} submitted successfully!`, 'text-green-600');
+                sadhanaForm.reset();
+            } catch (error) {
+                console.error("Error submitting sadhana report:", error);
+                showMessage('devotee-message', 'Error submitting report. Permissions issue. Has your Devotee ID been registered?', 'text-red-600');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function showMessage(elementId, message, className) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = `mt-3 text-center font-semibold ${className}`;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 5000);
+        }
+
+        // --- HOST FUNCTIONALITY ---
+
+        let unsubscribeReports = null;
+
+        window.fetchDevoteeReports = async function() {
+            if (!isAuthReady || !secureUserId) {
+                showMessage('host-message', 'Authentication not complete. Cannot fetch data.', 'text-red-600');
+                return;
+            }
+
+            const targetDevoteeId = document.getElementById('devotee-id-input').value.trim();
+
+            if (!targetDevoteeId) {
+                showMessage('host-message', 'Please enter a Devotee ID (Name).', 'text-red-600');
+                return;
+            }
+
+            // Revoke previous listener if active
+            if (unsubscribeReports) {
+                unsubscribeReports();
+                unsubscribeReports = null;
+            }
+            
+            showLoading(true);
+            document.getElementById('host-message').classList.add('hidden');
+            
+            let targetSecureId = null;
+
+            try {
+                // 1. Look up the Secure ID (Firebase UID) using the Declared Name
+                const mapDocRef = doc(db, `artifacts/${appId}/public/data/devotee_id_map`, targetDevoteeId);
+                const mapDoc = await getDoc(mapDocRef);
+
+                if (!mapDoc.exists() || !mapDoc.data().secureId) {
+                    throw new Error("ID not mapped or found.");
+                }
+                
+                targetSecureId = mapDoc.data().secureId;
+                
+            } catch (error) {
+                showLoading(false);
+                console.error("Error finding Devotee's secure ID:", error);
+                showMessage('host-message', 'Error: Devotee ID (Name) not found. Check the spelling or confirm the devotee has registered and submitted a report.', 'text-red-600');
+                
+                document.getElementById('devotee-profile-card').classList.add('hidden');
+                document.getElementById('reports-container').innerHTML = '';
+                return;
+            }
+
+
+            // 2. Fetch reports using the actual Secure ID
+            // Path: /artifacts/{appId}/users/{targetSecureId}/sadhana_reports
+            const privateCollectionPath = `artifacts/${appId}/users/${targetSecureId}/sadhana_reports`;
+            const reportsQuery = query(collection(db, privateCollectionPath), orderBy("timestamp", "desc"));
+            
+            // Use onSnapshot for real-time updates and to fetch initial data
+            unsubscribeReports = onSnapshot(reportsQuery, (snapshot) => {
+                showLoading(false);
+                const reports = [];
+                snapshot.forEach(doc => {
+                    reports.push({ id: doc.id, ...doc.data() });
+                });
+
+                renderHostReports(targetDevoteeId, reports);
+            }, (error) => {
+                showLoading(false);
+                console.error("Error fetching devotee reports:", error);
+                // This usually means the Host's ID is not authorized by the security rules to read the Devotee's secure ID collection.
+                showMessage('host-message', 'Permissions denied: Your Host ID may not be authorized to view these reports. Consult the system administrator.', 'text-red-600');
+                
+                document.getElementById('devotee-profile-card').classList.add('hidden');
+                document.getElementById('reports-container').innerHTML = '';
+            });
+        }
+
+        function renderHostReports(targetDevoteeId, reports) {
+            const profileCard = document.getElementById('devotee-profile-card');
+            const reportsContainer = document.getElementById('reports-container');
+            const noReportsMessage = document.getElementById('no-reports-message');
+            
+            document.getElementById('fetched-devotee-id').textContent = targetDevoteeId;
+            profileCard.classList.remove('hidden');
+            reportsContainer.innerHTML = ''; // Clear previous reports
+
+            if (reports.length === 0) {
+                noReportsMessage.classList.remove('hidden');
+                return;
+            } else {
+                noReportsMessage.classList.add('hidden');
+            }
+
+            reports.forEach(report => {
+                const date = report.date || 'N/A';
+                const dateDisplay = new Date(report.timestamp?.toDate()).toLocaleDateString() || date;
+                
+                // Determine status for R/Y/G indicator (example logic)
+                let statusColor = 'bg-red-500'; // Default: Red
+                if (report.rounds >= 8 && report.rounds < 16) {
+                    statusColor = 'bg-yellow-500'; // Yellow
+                } else if (report.rounds >= 16) {
+                    statusColor = 'bg-green-500'; // Green
+                }
+
+                // Calculate totals
+                const totalReading = (report.spReadingDuration || 0) + (report.personalReadingDuration || 0);
+                const totalStudies = (report.studyDuration || 0);
+                const totalHearing = (report.hearingDuration || 0);
+
+                const reportCard = document.createElement('div');
+                reportCard.className = 'sadhana-card border-l-4 border-gray-400 p-4 relative';
+                reportCard.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-bold text-gray-800">Report for: ${dateDisplay}</h4>
+                        <span class="w-4 h-4 rounded-full ${statusColor}" title="Rounds Status"></span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <!-- Left Column -->
+                        <div>
+                            <p class="font-semibold text-orange-600"><span class="text-green-700 font-extrabold mr-1 text-base">HARE KRISHNA</span> Chanting</p>
+                            <p>Rounds: <span class="font-mono">${report.rounds}</span></p>
+                            <p>Finished: <span class="font-mono">${report.lastRoundTime || 'N/A'}</span></p>
+                            
+                            <p class="font-semibold text-orange-600 mt-2"><i class="fas fa-book mr-1"></i> Reading & Studies</p>
+                            <p>Total Reading: ${totalReading} min</p>
+                            <p>SP Book: ${report.spBookName || 'N/A'} (${report.spReadingDuration} min)</p>
+                            <p>Total Studies: ${totalStudies} min</p>
+
+                            <p class="font-semibold text-orange-600 mt-2"><i class="fas fa-headphones mr-1"></i> Hearing</p>
+                            <p>Duration: ${totalHearing} min</p>
+                            <p>Topic: ${report.hearingTopic || 'N/A'}</p>
+                        </div>
+
+                        <!-- Right Column -->
+                        <div>
+                            <p class="font-semibold text-orange-600"><i class="fas fa-hands-helping mr-1"></i> Service</p>
+                            <p>Details: ${report.serviceDetails || 'None Reported'}</p>
+
+                            <p class="font-semibold text-orange-600 mt-2"><i class="fas fa-bed mr-1"></i> Sleep</p>
+                            <p>Wake Up: ${report.wakeUpTime || 'N/A'}</p>
+                            <p>Total Hours: ${report.sleepDuration || 'N/A'}</p>
+                            <p>Day Rest: ${report.dayRestTime || 'None Reported'}</p>
+
+                            <p class="font-semibold text-orange-600 mt-2"><i class="fas fa-sticky-note mr-1"></i> Devotee Comments</p>
+                            <p class="italic text-gray-600">${report.comments || 'No comments left.'}</p>
+                        </div>
+                    </div>
+                `;
+                reportsContainer.appendChild(reportCard);
+            });
+        }
+        
+        // Start Firebase initialization
+        initializeFirebase();
+    </script>
+</body>
+</html>
