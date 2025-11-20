@@ -83,7 +83,7 @@
         </div>
 
         <!-- Devotee Report Form View -->
-        <div id="devotee-view" class="hidden">
+        <div id="devotee-view">
             <h2 class="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
                 <i class="fas fa-clipboard-list mr-2 text-orange-600"></i> Daily Sadhana Submission
             </h2>
@@ -246,16 +246,24 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, addDoc, onSnapshot, collection, query, orderBy, serverTimestamp, setLogLevel, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global variables provided by the Canvas environment
+        // --- HARDCODED FALLBACKS FOR EXTERNAL ENVIRONMENT ---
+        // !!! IMPORTANT: REPLACE THESE PLACEHOLDERS WITH YOUR ACTUAL FIREBASE CONFIGURATION !!!
         const firebaseConfig = {
-            apiKey: "AIzaSyDaS1234567890aBcdEfGhIjKlMnOpQrS", // Your 39-character key
-            authDomain: "iskcon-sadhana-2025.firebaseapp.com",
-            projectId: "iskcon-sadhana-2025", 
-            storageBucket: "iskcon-sadhana-2025.appspot.com",
-            messagingSenderId: "987654321000",
-            appId: "1:987654321000:web:abcdef1234567890"
+            apiKey: "AIzaSyBhMLyPLJ8s0P56uXlIqIFcbjvL3Am5TJg",
+            authDomain: "flutter-ai-playground-452d7.firebaseapp.com",
+            projectId: "flutter-ai-playground-452d7",
+            storageBucket: "flutter-ai-playground-452d7.firebasestorage.app",
+            messagingSenderId: "761849874992",
+            appId: "1:761849874992:web:4de39de02bffacf7e53bf5"
         };
+        
+        // Global variables provided by the Canvas environment (with fallbacks)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
+        // Configuration reference must come AFTER it is defined
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : DEFAULT_FIREBASE_CONFIG;
+        
         let app;
         let db;
         let auth;
@@ -327,10 +335,19 @@
 
         // --- FIREBASE INITIALIZATION & AUTHENTICATION ---
         async function initializeFirebase() {
-            if (!firebaseConfig) {
-                console.error("Firebase configuration is missing.");
+            
+            // Check if essential config is available (even the fallback)
+            if (!firebaseConfig || !firebaseConfig.projectId || firebaseConfig.projectId === "default-project-id") {
+                console.error("Firebase configuration is missing or using placeholder defaults. App will function, but data persistence/sharing will fail.");
+                document.getElementById('loading-indicator').classList.add('hidden');
+                document.getElementById('devotee-view').classList.remove('hidden'); // Show content even on failure
+                document.getElementById('host-view').classList.add('hidden');
+                showMessage('devotee-message', 'DATABASE ERROR: Firebase is not correctly configured. Data will not be saved. **Please replace the placeholders in the script tag with your actual Firebase config.**', 'text-red-600');
+                isAuthReady = true;
+                window.setView('devotee');
                 return;
             }
+
             showLoading(true);
 
             try {
@@ -350,12 +367,13 @@
                             // Ensure the map is updated after successful auth if a name was set locally
                             updateDevoteeMap(declaredDevoteeId);
                         }
-                        setView('devotee'); 
+                        window.setView('devotee'); 
                     } else {
                         secureUserId = null;
                         document.getElementById('user-id-display-secure').textContent = 'N/A - Sign In Failed';
                         isAuthReady = true;
                         console.log("User signed out or failed to sign in.");
+                        window.setView('devotee'); // Ensure view is set even on sign-out
                     }
                     showLoading(false);
                 });
@@ -368,6 +386,9 @@
             } catch (error) {
                 console.error("Firebase initialization or sign-in failed:", error);
                 document.getElementById('user-id-display-secure').textContent = 'Error during sign-in.';
+                showMessage('devotee-message', 'Initialization failed. Check Firebase config.', 'text-red-600');
+                isAuthReady = true;
+                window.setView('devotee');
                 showLoading(false);
             }
         }
@@ -388,6 +409,7 @@
                 console.log(`Public map updated for ${devoteeName}`);
             } catch (error) {
                 console.error("Error updating devotee map:", error);
+                // Displaying error but allowing the app to run
             }
         }
 
@@ -425,7 +447,7 @@
         async function handleSadhanaSubmission(e) {
             e.preventDefault();
             if (!isAuthReady || !secureUserId) {
-                showMessage('devotee-message', 'Authentication not complete. Please wait.', 'text-red-600');
+                showMessage('devotee-message', 'Authentication not complete or Firebase not configured. Cannot submit.', 'text-red-600');
                 return;
             }
 
@@ -459,7 +481,6 @@
                 timestamp: serverTimestamp(),
             };
 
-            // *** FIX: Use secureUserId in the collection path for write authorization ***
             // Path: /artifacts/{appId}/users/{secureUserId}/sadhana_reports
             const privateCollectionPath = `artifacts/${appId}/users/${secureUserId}/sadhana_reports`;
 
@@ -469,7 +490,7 @@
                 sadhanaForm.reset();
             } catch (error) {
                 console.error("Error submitting sadhana report:", error);
-                showMessage('devotee-message', 'Error submitting report. Permissions issue. Has your Devotee ID been registered?', 'text-red-600');
+                showMessage('devotee-message', 'Error submitting report. Permissions issue. Please ensure your Firebase rules allow write access to your private collection.', 'text-red-600');
             } finally {
                 showLoading(false);
             }
@@ -551,7 +572,7 @@
                 showLoading(false);
                 console.error("Error fetching devotee reports:", error);
                 // This usually means the Host's ID is not authorized by the security rules to read the Devotee's secure ID collection.
-                showMessage('host-message', 'Permissions denied: Your Host ID may not be authorized to view these reports. Consult the system administrator.', 'text-red-600');
+                showMessage('host-message', 'Permissions denied: Your Host ID may not be authorized to view these reports. Consult the system administrator and check your Firebase rules.', 'text-red-600');
                 
                 document.getElementById('devotee-profile-card').classList.add('hidden');
                 document.getElementById('reports-container').innerHTML = '';
@@ -636,10 +657,7 @@
         }
         
         // Start Firebase initialization
-        const app = initializeApp(firebaseConfig);
+        initializeFirebase();
     </script>
 </body>
 </html>
-
-
-
