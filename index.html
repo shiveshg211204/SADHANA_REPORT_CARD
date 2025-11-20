@@ -248,14 +248,14 @@
 
         // --- HARDCODED FALLBACKS FOR EXTERNAL ENVIRONMENT ---
         // This ensures the app doesn't crash if run outside the environment.
-       const firebaseConfig = {
-           apiKey: "AIzaSyBhMLyPLJ8s0P56uXlIqIFcbjvL3Am5TJg",
-           authDomain: "flutter-ai-playground-452d7.firebaseapp.com",
-           projectId: "flutter-ai-playground-452d7",
-           storageBucket: "flutter-ai-playground-452d7.firebasestorage.app",
-           messagingSenderId: "761849874992",
-           appId: "1:761849874992:web:4de39de02bffacf7e53bf5"
-};
+        const DEFAULT_FIREBASE_CONFIG = {
+            apiKey: "AIzaSy...", // Placeholder - must be replaced with your actual key if deploying!
+            authDomain: "projectId.firebaseapp.com",
+            projectId: "default-project-id",
+            storageBucket: "projectId.appspot.com",
+            messagingSenderId: "00000000000",
+            appId: "1:00000000000:web:0000000000000000000000"
+        };
         
         // Global variables provided by the Canvas environment (with fallbacks)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
