@@ -83,7 +83,7 @@
         </div>
 
         <!-- Devotee Report Form View -->
-        <div id="devotee-view">
+        <div id="devotee-view" class="hidden">
             <h2 class="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
                 <i class="fas fa-clipboard-list mr-2 text-orange-600"></i> Daily Sadhana Submission
             </h2>
@@ -247,23 +247,21 @@
         import { getFirestore, doc, addDoc, onSnapshot, collection, query, orderBy, serverTimestamp, setLogLevel, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- HARDCODED FALLBACKS FOR EXTERNAL ENVIRONMENT ---
-        // !!! IMPORTANT: REPLACE THESE PLACEHOLDERS WITH YOUR ACTUAL FIREBASE CONFIGURATION !!!
-        const firebaseConfig = {
-            apiKey: "AIzaSyBhMLyPLJ8s0P56uXlIqIFcbjvL3Am5TJg",
-            authDomain: "flutter-ai-playground-452d7.firebaseapp.com",
-            projectId: "flutter-ai-playground-452d7",
-            storageBucket: "flutter-ai-playground-452d7.firebasestorage.app",
-            messagingSenderId: "761849874992",
-            appId: "1:761849874992:web:4de39de02bffacf7e53bf5"
-        };
+        // This ensures the app doesn't crash if run outside the environment.
+       const firebaseConfig = {
+           apiKey: "AIzaSyBhMLyPLJ8s0P56uXlIqIFcbjvL3Am5TJg",
+           authDomain: "flutter-ai-playground-452d7.firebaseapp.com",
+           projectId: "flutter-ai-playground-452d7",
+           storageBucket: "flutter-ai-playground-452d7.firebasestorage.app",
+           messagingSenderId: "761849874992",
+           appId: "1:761849874992:web:4de39de02bffacf7e53bf5"
+};
         
         // Global variables provided by the Canvas environment (with fallbacks)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : DEFAULT_FIREBASE_CONFIG;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // Configuration reference must come AFTER it is defined
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : DEFAULT_FIREBASE_CONFIG;
-        
         let app;
         let db;
         let auth;
@@ -342,9 +340,9 @@
                 document.getElementById('loading-indicator').classList.add('hidden');
                 document.getElementById('devotee-view').classList.remove('hidden'); // Show content even on failure
                 document.getElementById('host-view').classList.add('hidden');
-                showMessage('devotee-message', 'DATABASE ERROR: Firebase is not correctly configured. Data will not be saved. **Please replace the placeholders in the script tag with your actual Firebase config.**', 'text-red-600');
+                showMessage('devotee-message', 'DATABASE ERROR: Firebase is not correctly configured. Data will not be saved.', 'text-red-600');
                 isAuthReady = true;
-                window.setView('devotee');
+                setView('devotee');
                 return;
             }
 
@@ -367,13 +365,13 @@
                             // Ensure the map is updated after successful auth if a name was set locally
                             updateDevoteeMap(declaredDevoteeId);
                         }
-                        window.setView('devotee'); 
+                        setView('devotee'); 
                     } else {
                         secureUserId = null;
                         document.getElementById('user-id-display-secure').textContent = 'N/A - Sign In Failed';
                         isAuthReady = true;
                         console.log("User signed out or failed to sign in.");
-                        window.setView('devotee'); // Ensure view is set even on sign-out
+                        setView('devotee'); // Ensure view is set even on sign-out
                     }
                     showLoading(false);
                 });
@@ -388,7 +386,7 @@
                 document.getElementById('user-id-display-secure').textContent = 'Error during sign-in.';
                 showMessage('devotee-message', 'Initialization failed. Check Firebase config.', 'text-red-600');
                 isAuthReady = true;
-                window.setView('devotee');
+                setView('devotee');
                 showLoading(false);
             }
         }
