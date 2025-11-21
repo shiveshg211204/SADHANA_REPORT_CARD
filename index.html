@@ -1,664 +1,443 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html lang="hi"> <!-- Changed language to Hindi --><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sri Guru's Compass: PBSC Sadhana Reporter</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        :root {
-            --primary: #FF9800; /* Deep Saffron/Orange for ISKCON theme */
-            --secondary: #4CAF50; /* Green for goodness/success */
-            --accent: #2196F3; /* Blue for calm/wisdom */
-            --background: #FFF8E1; /* Light cream/yellow background */
-        }
+    <title>इवेंट एंट्री पंजीकरण</title> <!-- Event Entry Registration --><!-- Load Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font --><style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@100..900&display=swap'); /* Added Devanagari font */
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--background);
-        }
-        .sadhana-card {
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        .btn-primary {
-            background-color: var(--primary);
-            color: white;
-            transition: background-color 0.2s;
-        }
-        .btn-primary:hover {
-            background-color: #E68A00;
-        }
-        .btn-secondary {
-            background-color: var(--secondary);
-            color: white;
-            transition: background-color 0.2s;
-        }
-        .btn-secondary:hover {
-            background-color: #388E3C;
-        }
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type="number"] {
-            -moz-appearance: textfield;
+            font-family: 'Noto Sans Devanagari', 'Inter', sans-serif; /* Prioritize Devanagari font */
+            background-color: #f7f7f7;
         }
     </style>
 </head>
-<body class="p-4 min-h-screen">
+<body class="min-h-screen flex items-center justify-center p-4">
 
-    <div id="loading-indicator" class="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50 hidden">
-        <div class="text-center">
-            <i class="fas fa-spinner fa-spin text-4xl text-yellow-600"></i>
-            <p class="mt-2 text-lg text-gray-700">Connecting to the divine database...</p>
-        </div>
-    </div>
+    <!-- Main Container --><div id="app-container" class="w-full max-w-lg bg-white shadow-xl rounded-xl p-6 md:p-10">
+        <h1 class="text-3xl font-bold text-center text-indigo-700 mb-6">कृष्ण बलराम हॉल</h1> <!-- Krishna Balrama Hall --><!-- Loading State --><div id="loading-state" class="text-center py-10">
+            <svg class="animate-spin h-8 w-8 text-indigo-500 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-gray-600">एप्लिकेशन लोड हो रहा है...</p> <!-- Loading application... --></div>
 
-    <header class="text-center py-6">
-        <h1 class="text-4xl font-bold text-orange-700">Sri Guru's Compass</h1>
-        <p class="text-xl text-gray-600 mt-1">PBSC Sadhana Reporter</p>
-    </header>
-
-    <div class="max-w-4xl mx-auto">
-        <!-- AUTH WARNING BANNER (Visible if config placeholders are used) -->
-        <div id="auth-warning-banner" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 hidden" role="alert">
-            <p class="font-bold">CRITICAL CONFIGURATION ERROR DETECTED</p>
-            <p class="text-sm">Please update the **Firebase Configuration** in the script block below with your actual project keys. Until this is fixed, data saving and secure access will fail. (**Secure ID is currently N/A**)</p>
-        </div>
-
-        <!-- Auth Info: Now showing the secure (hidden) Firebase UID and the declared Name/ID -->
-        <div id="auth-info" class="sadhana-card text-xs text-center break-all">
-            <i class="fas fa-fingerprint text-gray-500 mr-2"></i> Secure ID: <span id="user-id-display-secure" class="font-mono text-gray-400">...</span> (Used internally)
-        </div>
-
-        <!-- Main View Switcher -->
-        <div class="flex justify-center mb-6 space-x-4">
-            <button id="devotee-btn" class="flex-1 px-4 py-2 rounded-lg font-semibold btn-primary shadow-md" onclick="setView('devotee')">
-                <i class="fas fa-pencil-alt mr-2"></i> Devotee Report
-            </button>
-            <button id="host-btn" class="flex-1 px-4 py-2 rounded-lg font-semibold bg-gray-300 hover:bg-gray-400 text-gray-800 shadow-md" onclick="setView('host')">
-                <i class="fas fa-users-cog mr-2"></i> Host Dashboard
-            </button>
-        </div>
-
-        <!-- Devotee Report Form View -->
-        <div id="devotee-view">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
-                <i class="fas fa-clipboard-list mr-2 text-orange-600"></i> Daily Sadhana Submission
-            </h2>
-            <div class="sadhana-card">
-                
-                <!-- Devotee Name/ID Declaration -->
-                <div class="mb-6 pb-4 border-b border-gray-200">
-                    <h3 class="text-xl font-bold text-blue-600 mb-3 flex items-center">
-                        <i class="fas fa-user-tag mr-2"></i> Declare Your Devotee ID (Name)
-                    </h3>
-                    <label class="block">
-                        <span class="text-gray-700">Your Unique Devotee ID/Name (e.g., Krishna\_Das\_PBSC):</span>
-                        <input type="text" id="devotee-name-input" placeholder="Enter your unique name/ID here" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 text-lg font-mono">
-                    </label>
-                    <p class="text-xs text-red-500 mt-1">
-                        *This name is used by mentors to find your reports. Please keep it unique and consistent.*
-                    </p>
-                    <p id="devotee-name-display" class="mt-3 text-center text-lg font-semibold text-green-700 hidden">
-                        Current Devotee ID: <span id="current-devotee-id"></span>
-                        <button onclick="copyCurrentDevoteeId()" class="ml-2 text-blue-500 hover:text-blue-700 transition duration-150 text-sm">
-                            <i class="fas fa-copy"></i> Copy
-                        </button>
-                        <p id="copy-message" class="text-xs text-green-500 mt-1 hidden">Copied!</p>
-                    </p>
+        <!-- Form Section --><div id="form-section" class="hidden">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">अपनी प्रविष्टि पंजीकृत करें</h2> <!-- Register Your Entry --><form id="registration-form" class="space-y-5">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">पूरा नाम</label> <!-- Full Name --><input type="text" id="name" name="name" required placeholder="अपना पूरा नाम दर्ज करें"
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
                 </div>
-                
-                <form id="sadhana-form">
-                    
-                    <!-- CHANTING -->
-                    <h3 class="text-xl font-bold text-orange-600 mb-3 border-b pb-2"><span class="text-green-700 font-extrabold mr-2">HARE KRISHNA</span> Japa Chanting</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <label class="block">
-                            <span class="text-gray-700">No. of Rounds (16 ideal)</span>
-                            <input type="number" id="rounds" min="0" max="64" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
-                        </label>
-                        <label class="block">
-                            <span class="text-gray-700">Average Time (min/round)</span>
-                            <input type="number" id="avg-time" min="0" step="0.5" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
-                        </label>
-                        <label class="block">
-                            <span class="text-gray-700">Last Round Finished At (HH:MM)</span>
-                            <input type="time" id="last-round-time" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
-                        </label>
-                    </div>
-
-                    <!-- READING & HEARING -->
-                    <h3 class="text-xl font-bold text-orange-600 mb-3 border-b pb-2"><i class="fas fa-book-reader mr-2"></i> Reading & Hearing</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <label class="block">
-                            <span class="text-gray-700">SP Book Name (e.g., Nectar of Devotion)</span>
-                            <input type="text" id="sp-book-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
-                        </label>
-                        <label class="block">
-                            <span class="text-gray-700">SP Book Reading Duration (min)</span>
-                            <input type="number" id="sp-reading-duration" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
-                        </label>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <label class="block">
-                            <span class="text-gray-700">Personal Reading Duration (min)</span>
-                            <input type="number" id="personal-reading-duration" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
-                        </label>
-                        <label class="block">
-                            <span class="text-gray-700">Hearing Duration (min)</span>
-                            <input type="number" id="hearing-duration" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
-                        </label>
-                    </div>
-                    <label class="block mb-4">
-                        <span class="text-gray-700">Hearing Topic/Speaker</span>
-                        <input type="text" id="hearing-topic" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
-                    </label>
-
-                    <!-- SERVICES & STUDIES -->
-                    <h3 class="text-xl font-bold text-orange-600 mb-3 border-b pb-2"><i class="fas fa-hands-helping mr-2"></i> Service & Studies</h3>
-                    <label class="block mb-4">
-                        <span class="text-gray-700">Service Details (briefly describe service)</span>
-                        <input type="text" id="service-details" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
-                    </label>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <label class="block">
-                            <span class="text-gray-700">Studies Subject/Topic (e.g., Bhakti Vriksha lesson)</span>
-                            <input type="text" id="study-topic" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
-                        </label>
-                        <label class="block">
-                            <span class="text-gray-700">Studies Duration (min)</span>
-                            <input type="number" id="study-duration" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
-                        </label>
-                    </div>
-
-                    <!-- SLEEP & COMMENTS -->
-                    <h3 class="text-xl font-bold text-orange-600 mb-3 border-b pb-2"><i class="fas fa-bed mr-2"></i> Sleep & Notes</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <label class="block">
-                            <span class="text-gray-700">Wake Up Time (HH:MM)</span>
-                            <input type="time" id="wake-up-time" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
-                        </label>
-                        <label class="block">
-                            <span class="text-gray-700">Day Rest / Slept At (HH:MM)</span>
-                            <input type="time" id="day-rest-time" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
-                        </label>
-                        <label class="block">
-                            <span class="text-gray-700">Total Sleep Duration (Hours)</span>
-                            <input type="number" id="sleep-duration" min="0" step="0.1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2">
-                        </label>
-                    </div>
-
-                    <label class="block mb-6">
-                        <span class="text-gray-700">Comments / Reflections for Counselor</span>
-                        <textarea id="comments" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"></textarea>
-                    </label>
-
-                    <button type="submit" class="btn-primary w-full py-3 rounded-lg text-lg font-bold shadow-lg">
-                        <i class="fas fa-cloud-upload-alt mr-2"></i> Submit Sadhana Report
-                    </button>
-                    <p id="devotee-message" class="mt-3 text-center text-green-600 font-semibold hidden"></p>
-                </form>
-            </div>
+                <div>
+                    <label for="contact" class="block text-sm font-medium text-gray-700 mb-1">संपर्क नंबर</label> <!-- Contact Number --><input type="tel" id="contact" name="contact" required placeholder="अपना संपर्क नंबर दर्ज करें"
+                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                </div>
+                <div>
+                    <label for="address" class="block text-sm font-medium text-gray-700 mb-1">आप मंदिर में किस भक्त से जुड़े हैं?</label> <!-- Which devotee are you connected with at the temple? --><textarea id="address" name="address" rows="3" required placeholder="भक्त का नाम लिखें"
+                              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"></textarea>
+                </div>
+                <button type="submit" id="submit-button" 
+                        class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition duration-200 shadow-md disabled:bg-indigo-400">
+                    प्रवेश कार्ड बनाएँ
+                </button> <!-- Generate Entry Card --></form>
+            <p id="error-message" class="text-red-500 text-center mt-3 hidden"></p>
         </div>
 
-        <!-- Host Dashboard View -->
-        <div id="host-view" class="hidden">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
-                <i class="fas fa-chart-line mr-2 text-blue-600"></i> Host Dashboard (Mentor View)
-            </h2>
 
-            <!-- Input to Fetch Devotee Data -->
-            <div class="sadhana-card bg-blue-50 border border-blue-200">
-                <p class="text-sm text-blue-800 mb-3">
-                    Enter the **Devotee ID (Name)** of the devotee whose reports you wish to view.
-                </p>
-                <div class="flex space-x-2">
-                    <input type="text" id="devotee-id-input" placeholder="Enter Devotee's Name/ID here" class="flex-grow rounded-md border-gray-300 shadow-sm p-2">
-                    <button onclick="fetchDevoteeReports()" class="btn-secondary px-4 py-2 rounded-lg font-semibold">
-                        <i class="fas fa-search"></i> Fetch Reports
-                    </button>
-                </div>
-                <p id="host-message" class="mt-3 text-center text-red-600 font-semibold hidden"></p>
-            </div>
-
-            <!-- Devotee Report Display Area -->
-            <div id="devotee-report-display" class="mt-6">
-                <div id="devotee-profile-card" class="sadhana-card bg-indigo-50 border border-indigo-200 hidden">
-                    <h3 class="text-xl font-bold text-indigo-700">
-                        Sadhana History for: <span id="fetched-devotee-id" class="font-mono text-base break-all"></span>
-                    </h3>
-                    <p id="no-reports-message" class="mt-2 text-gray-600 hidden">No sadhana reports found for this devotee.</p>
-                </div>
-
-                <!-- Reports Table/Cards -->
-                <div id="reports-container" class="space-y-4">
-                    <!-- Reports will be inserted here by JavaScript -->
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-    <!-- Firebase SDKs (MUST use type="module") -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, onSnapshot, collection, query, orderBy, serverTimestamp, setLogLevel, getDoc, setDoc, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        // =================================================================================
-        // !!! FIREBASE CONFIGURATION - YOU MUST EDIT THIS BLOCK !!!
-        // =================================================================================
-        const DEFAULT_FIREBASE_CONFIG = {
-            // 🛑 1. Replace "..." with your actual API Key (from Project Settings > Web App)
-            apiKey: "AIzaSyBhMLyPLJ8s0P56uXlIqIFcbjvL3Am5TJg", 
+        <!-- Entry Card Section --><div id="card-section" class="hidden">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6 text-center">आपका इवेंट प्रवेश कार्ड</h2> <!-- Your Event Entry Card -->
             
-            // 🛑 2. Replace "default-project-id" with your actual Project ID (e.g., "iskcon-app-12345")
-            projectId: "flutter-ai-playground-452d7",
+            <div id="entry-card" class="bg-gradient-to-br from-indigo-600 to-purple-700 text-white p-6 rounded-xl shadow-2xl space-y-4">
+                
+                <!-- UPDATED HEADER BLOCK -->
+                <div class="border-b border-white/30 pb-3 mb-4">
+                    <!-- Title Change: From ENTRY PASS to HALL -->
+                    <h3 class="text-2xl font-bold">कृष्ण बलराम हॉल</h3> 
+                    
+                    <!-- Pass Label Change: From VALID ENTRY to प्रवेश पास -->
+                    <p class="text-lg font-light opacity-90 mt-1">प्रवेश पास</p> 
+                    
+                    <!-- Registration Date (New Header Size) -->
+                    <p class="text-3xl font-extrabold mt-1" id="card-timestamp"></p> 
+                </div>
 
-            // 🛑 3. Replace these values with the rest of your config properties (Auth Domain, Storage Bucket, etc.)
-            authDomain: "flutter-ai-playground-452d7.firebaseapp.com",
-            storageBucket: "flutter-ai-playground-452d7.firebasestorage.app",
-            messagingSenderId: "761849874992",
-            appId: "1:761849874992:web:4de39de02bffacf7e53bf5"
-        };
-        // =================================================================================
-        // !!! END CONFIGURATION BLOCK !!!
-        // =================================================================================
+                <div class="space-y-2">
+                    <p class="text-sm font-light">उपस्थित व्यक्ति का नाम:</p> <!-- ATTENDEE NAME: -->
+                    <p id="card-name" class="text-xl font-extrabold"></p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 pt-2 border-t border-white/30">
+                    <!-- Contact Number -->
+                    <div>
+                        <p class="text-xs font-light opacity-80">संपर्क नंबर</p> <!-- CONTACT NO. -->
+                        <p id="card-contact" class="font-medium text-base"></p>
+                    </div>
+                    <!-- Empty slot removed since Date is now at the top -->
+                    <div></div>
+                </div>
+
+                <div class="pt-2">
+                    <p class="text-xs font-light opacity-80">आप मंदिर में किस भक्त से जुड़े हैं?</p> <!-- Which devotee are you connected with at the temple? -->
+                    <p id="card-address" class="font-medium text-sm"></p>
+                </div>
+                
+                <div class="pt-2">
+                    <p class="text-xs font-light opacity-80">उपयोगकर्ता आईडी (आयोजक संदर्भ के लिए)</p> <!-- USER ID (For Organizer Reference) -->
+                    <p id="card-user-id" class="font-light text-xs opacity-70 truncate"></p>
+                </div>
+            </div>
+            
+            <p class="text-center text-sm text-gray-500 mt-6">
+                आपका पंजीकरण पूर्ण हो गया है और सुरक्षित रूप से संग्रहीत है।
+            </p> <!-- Your registration is complete and securely stored. --><div class="text-center mt-4 space-x-4">
+                <!-- DOWNLOAD BUTTON --><button onclick="downloadCard()" 
+                        class="bg-green-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-600 transition duration-200 shadow-md">
+                    कार्ड डाउनलोड करें
+                </button> <!-- Download Card --><!-- BUTTON TO REGISTER NEW GUEST --><button onclick="handleNewRegistration()" 
+                        class="text-indigo-600 hover:text-indigo-800 text-sm font-medium py-2 px-4">
+                    किसी अन्य अतिथि को पंजीकृत करें
+                </button> <!-- Register Another Guest --></div>
+        </div>
+
+    </div>
+
+    <!-- External Library for converting HTML to Image (Canvas) --><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Firebase SDKs --><script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        // Import signOut function
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // Import collection and addDoc for writing to a public collection
+        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // Global variables provided by the Canvas environment (with fallbacks)
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // Use Debug logging for development
+        setLogLevel('Debug');
+
+        // --- EXPLICIT FIREBASE CONFIGURATION (Provided by User) ---
+        // We use a simple constant name here to avoid confusion with environment variables
+        const PROJECT_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyBOc6EeIc59S6COb80NJfYyl3GdRiI2H6k",
+            authDomain: "entrycard-1a28a.firebaseapp.com",
+            projectId: "entrycard-1a28a",
+            storageBucket: "entrycard-1a28a.firebasestorage.app",
+            messagingSenderId: "571342230056",
+            appId: "1:571342230056:web:de9f4c19cd820cee6cdb1d",
+            measurementId: "G-MQWXKCQ85H" 
+        };
+        // ---------------------------------------------------------
+
+        // Global Variables
+        // Use the environment's app ID if available, otherwise use the projectId from the config.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : PROJECT_FIREBASE_CONFIG.projectId;
+        // CORRECTED: Use the explicitly defined config object for initialization
+        const firebaseConfig = PROJECT_FIREBASE_CONFIG; 
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : DEFAULT_FIREBASE_CONFIG;
-
+        // Firebase Service Instances
         let app;
         let db;
         let auth;
-        let secureUserId = null; // The unique Firebase UID (internal use)
-        let declaredDevoteeId = localStorage.getItem('declaredDevoteeId') || ''; // User-declared ID (Name)
+        let userId = null;
         let isAuthReady = false;
 
-        // Set Firebase logging level (optional, but good for debugging)
-        setLogLevel('error');
+        // DOM Elements
+        const loadingState = document.getElementById('loading-state');
+        const formSection = document.getElementById('form-section');
+        const cardSection = document.getElementById('card-section');
+        const form = document.getElementById('registration-form');
+        const submitButton = document.getElementById('submit-button');
+        const errorMessage = document.getElementById('error-message');
+        const appContainer = document.getElementById('app-container');
 
-        // Utility to show loading spinner
-        function showLoading(show) {
-            document.getElementById('loading-indicator').classList.toggle('hidden', !show);
-        }
+        // --- Core Functions ---
 
-        // Utility to copy text to clipboard
-        window.copyCurrentDevoteeId = function() {
-            const idText = document.getElementById('current-devotee-id').textContent;
+        /**
+         * Initializes Firebase and authenticates the user.
+         */
+        async function initializeAppAndAuth() {
             try {
-                const el = document.createElement('textarea');
-                el.value = idText;
-                document.body.appendChild(el);
-                el.select();
-                document.execCommand('copy');
-                document.body.removeChild(el);
-                
-                const messageEl = document.getElementById('copy-message');
-                messageEl.classList.remove('hidden');
-                setTimeout(() => messageEl.classList.add('hidden'), 2000);
-            } catch (err) {
-                console.error('Could not copy text: ', err);
-            }
-        }
-
-        function updateDevoteeNameDisplay() {
-            const nameInput = document.getElementById('devotee-name-input');
-            const nameDisplay = document.getElementById('devotee-name-display');
-            const currentIdEl = document.getElementById('current-devotee-id');
-
-            if (declaredDevoteeId) {
-                nameInput.value = declaredDevoteeId;
-                nameInput.disabled = true;
-                currentIdEl.textContent = declaredDevoteeId;
-                nameDisplay.classList.remove('hidden');
-            } else {
-                nameInput.disabled = false;
-                nameDisplay.classList.add('hidden');
-            }
-        }
-        
-        // Listen for changes in the name input field and save it on blur
-        document.getElementById('devotee-name-input').addEventListener('blur', async (e) => {
-            const newName = e.target.value.trim();
-            if (newName && newName !== declaredDevoteeId) {
-                declaredDevoteeId = newName;
-                localStorage.setItem('declaredDevoteeId', declaredDevoteeId);
-                updateDevoteeNameDisplay();
-                
-                // Immediately update the public mapping when the name is set/changed
-                if (isAuthReady && secureUserId) {
-                    await updateDevoteeMap(newName);
-                    showMessage('devotee-message', 'Devotee ID (Name) saved and registered for mentor lookup!', 'text-blue-600');
-                } else {
-                    showMessage('devotee-message', 'Devotee ID (Name) saved locally. Log in to register for mentor lookup.', 'text-blue-600');
+                if (Object.keys(firebaseConfig).length === 0) {
+                    throw new Error("Firebase configuration not available.");
                 }
-            }
-        });
 
-        // Function to create/update the public mapping (Name -> Secure UID)
-        async function updateDevoteeMap(devoteeName) {
-            if (!secureUserId) return;
-
-            // Path: /artifacts/{appId}/public/data/devotee_id_map/{devoteeName}
-            const mapDocRef = doc(db, `artifacts/${appId}/public/data/devotee_id_map`, devoteeName);
-            
-            try {
-                await setDoc(mapDocRef, {
-                    secureId: secureUserId,
-                    declaredName: devoteeName,
-                    lastUpdated: serverTimestamp()
-                }, { merge: true });
-                console.log(`Public map updated for ${devoteeName}`);
-            } catch (error) {
-                console.error("Error updating devotee map:", error);
-            }
-        }
-
-
-        // --- FIREBASE INITIALIZATION & AUTHENTICATION ---
-        async function initializeFirebase() {
-            
-            // Check if essential config is available (if projectId is the placeholder, it fails)
-            if (!firebaseConfig || !firebaseConfig.projectId || firebaseConfig.projectId === "default-project-id") {
-                console.error("Firebase configuration is missing or using placeholder defaults. App will function, but data persistence/sharing will fail.");
-                document.getElementById('loading-indicator').classList.add('hidden');
-                document.getElementById('devotee-view').classList.remove('hidden'); // Show content even on failure
-                document.getElementById('host-view').classList.add('hidden');
-                document.getElementById('auth-warning-banner').classList.remove('hidden');
-                showMessage('devotee-message', 'DATABASE ERROR: Firebase is not correctly configured. Data will not be saved.', 'text-red-600');
-                isAuthReady = true;
-                setView('devotee');
-                return;
-            }
-
-            showLoading(true);
-
-            try {
+                // Initialize Firebase App FIRST
                 app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
+                
+                // Function to handle sign-in logic (called by onAuthStateChanged)
+                async function handleSignIn() {
+                    // Check if Authentication is properly initialized before calling signInAnonymously
+                    if (!auth || auth.currentUser) return; 
 
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        secureUserId = user.uid;
-                        document.getElementById('user-id-display-secure').textContent = secureUserId;
-                        isAuthReady = true;
-                        document.getElementById('auth-warning-banner').classList.add('hidden');
-                        console.log("Firebase Auth Ready. Secure UID:", secureUserId);
-                        
-                        updateDevoteeNameDisplay();
-                        if (declaredDevoteeId) {
-                            // Ensure the map is updated after successful auth if a name was set locally
-                            updateDevoteeMap(declaredDevoteeId);
-                        }
-                        setView('devotee'); 
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        console.log("Signed in with custom token.");
                     } else {
-                        secureUserId = null;
-                        document.getElementById('user-id-display-secure').textContent = 'N/A - Sign In Failed';
-                        isAuthReady = true;
-                        document.getElementById('auth-warning-banner').classList.remove('hidden');
-                        console.log("User signed out or failed to sign in.");
-                        setView('devotee'); // Ensure view is set even on sign-out
+                        // Sign in anonymously to ensure we always have a userId
+                        // This is the line that throws the error if the config is bad or auth is disabled.
+                        await signInAnonymously(auth);
+                        console.log("Signed in anonymously.");
                     }
-                    showLoading(false);
+                }
+
+                // Use onAuthStateChanged to manage UI based on authentication status
+                onAuthStateChanged(auth, async (user) => {
+                    isAuthReady = true; // Auth check has completed
+                    
+                    if (!user) {
+                        // If no user is logged in, sign one in first
+                        await handleSignIn();
+                        user = auth.currentUser; // Get the newly signed-in user
+                    }
+                    
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Authenticated as:", userId);
+                        // Ensure listenForEntryCard is only called when we have a user
+                        listenForEntryCard();
+                    } else {
+                        // Fallback if sign-in failed even after attempt
+                        console.error("Authentication failed: No user object received. Check Firebase project Auth setup.");
+                        loadingState.innerHTML = `<p class="text-red-600">प्रमाणीकरण विफल रहा। कृपया Firebase Console में Authentication सर्विस सक्षम करें।</p>`;
+                    }
                 });
 
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
             } catch (error) {
-                console.error("Firebase initialization or sign-in failed:", error);
-                document.getElementById('user-id-display-secure').textContent = 'Error during sign-in.';
-                showMessage('devotee-message', 'Initialization failed. Check Firebase config.', 'text-red-600');
-                isAuthReady = true;
-                setView('devotee');
-                showLoading(false);
-            }
-        }
-        
-        // --- APP STATE MANAGEMENT ---
-
-        window.setView = function(view) {
-            const devoteeView = document.getElementById('devotee-view');
-            const hostView = document.getElementById('host-view');
-            const devoteeBtn = document.getElementById('devotee-btn');
-            const hostBtn = document.getElementById('host-btn');
-
-            if (view === 'devotee') {
-                devoteeView.classList.remove('hidden');
-                hostView.classList.add('hidden');
-                devoteeBtn.classList.add('btn-primary');
-                devoteeBtn.classList.remove('bg-gray-300', 'hover:bg-gray-400', 'text-gray-800');
-                hostBtn.classList.remove('btn-primary');
-                hostBtn.classList.add('bg-gray-300', 'hover:bg-gray-400', 'text-gray-800');
-            } else if (view === 'host') {
-                hostView.classList.remove('hidden');
-                devoteeView.classList.add('hidden');
-                hostBtn.classList.add('btn-primary');
-                hostBtn.classList.remove('bg-gray-300', 'hover:bg-gray-400', 'text-gray-800');
-                devoteeBtn.classList.remove('btn-primary');
-                devoteeBtn.classList.add('bg-gray-300', 'hover:bg-gray-400', 'text-gray-800');
+                console.error("Firebase Initialization Error:", error);
+                loadingState.innerHTML = `<p class="text-red-600">एप्लिकेशन को आरंभ करने में त्रुटि। कृपया कॉन्फ़िगरेशन जांचें।</p><p class="text-sm text-gray-500">विवरण: ${error.message}</p>`;
             }
         }
 
-        // --- DEVOTEE FUNCTIONALITY ---
-
-        const sadhanaForm = document.getElementById('sadhana-form');
-        sadhanaForm.addEventListener('submit', handleSadhanaSubmission);
-
-        async function handleSadhanaSubmission(e) {
-            e.preventDefault();
-            if (!isAuthReady || !secureUserId) {
-                showMessage('devotee-message', 'Authentication not complete or Firebase not configured. Cannot submit.', 'text-red-600');
-                return;
-            }
-
-            if (!declaredDevoteeId) {
-                showMessage('devotee-message', 'Please declare your Devotee ID (Name) before submitting.', 'text-red-600');
-                document.getElementById('devotee-name-input').focus();
-                return;
-            }
-
-            showLoading(true);
-
-            // Fetch form data
-            const formData = {
-                devoteeId: declaredDevoteeId, // Used by host to look up
-                secureUserId: secureUserId, // Save the submitter's UID for data integrity
-                date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-                rounds: parseInt(document.getElementById('rounds').value) || 0,
-                avgTime: parseFloat(document.getElementById('avg-time').value) || 0,
-                lastRoundTime: document.getElementById('last-round-time').value || null,
-                spBookName: document.getElementById('sp-book-name').value.trim(),
-                spReadingDuration: parseInt(document.getElementById('sp-reading-duration').value) || 0,
-                personalReadingDuration: parseInt(document.getElementById('personal-reading-duration').value) || 0,
-                hearingDuration: parseInt(document.getElementById('hearing-duration').value) || 0,
-                hearingTopic: document.getElementById('hearing-topic').value.trim(),
-                serviceDetails: document.getElementById('service-details').value.trim(),
-                studyTopic: document.getElementById('study-topic').value.trim(),
-                studyDuration: parseInt(document.getElementById('study-duration').value) || 0,
-                wakeUpTime: document.getElementById('wake-up-time').value || null,
-                dayRestTime: document.getElementById('day-rest-time').value || null,
-                sleepDuration: parseFloat(document.getElementById('sleep-duration').value) || 0,
-                comments: document.getElementById('comments').value.trim(),
-                timestamp: serverTimestamp(),
-            };
-
-            // Path: /artifacts/{appId}/public/data/sadhana_reports (NEW PUBLIC PATH)
-            const publicCollectionPath = `artifacts/${appId}/public/data/sadhana_reports`;
+        /**
+         * Starts a new registration session by signing out the current user
+         * and immediately signing in a new one, then rendering the form.
+         */
+        async function handleNewRegistration() {
+            // 1. Visually reset to loading state
+            cardSection.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+            
+            // 2. Clear previous form data and errors for a clean start
+            form.reset();
+            hideError();
 
             try {
-                // Submit the Sadhana Report to the public/shared collection
-                await addDoc(collection(db, publicCollectionPath), formData);
-                
-                showMessage('devotee-message', `Report for ${formData.date} submitted successfully! Now visible on Host Dashboard.`, 'text-green-600');
-                sadhanaForm.reset();
-            } catch (error) {
-                console.error("Error submitting sadhana report:", error);
-                showMessage('devotee-message', 'Error submitting report. Please check your Firebase config and security rules.', 'text-red-600');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        function showMessage(elementId, message, className) {
-            const el = document.getElementById(elementId);
-            el.textContent = message;
-            el.className = `mt-3 text-center font-semibold ${className}`;
-            el.classList.remove('hidden');
-            setTimeout(() => el.classList.add('hidden'), 5000);
-        }
-
-        // --- HOST FUNCTIONALITY ---
-
-        let unsubscribeReports = null;
-
-        window.fetchDevoteeReports = async function() {
-            if (!isAuthReady || !secureUserId) {
-                showMessage('host-message', 'Authentication not complete. Cannot fetch data.', 'text-red-600');
-                return;
-            }
-
-            const targetDevoteeId = document.getElementById('devotee-id-input').value.trim();
-
-            if (!targetDevoteeId) {
-                showMessage('host-message', 'Please enter a Devotee ID (Name).', 'text-red-600');
-                return;
-            }
-
-            // Revoke previous listener if active
-            if (unsubscribeReports) {
-                unsubscribeReports();
-                unsubscribeReports = null;
-            }
-            
-            showLoading(true);
-            document.getElementById('host-message').classList.add('hidden');
-            
-            // Path: /artifacts/{appId}/public/data/sadhana_reports
-            const publicCollectionPath = `artifacts/${appId}/public/data/sadhana_reports`;
-            
-            // Query: Look for all reports matching the targetDevoteeId (the Name/ID)
-            const reportsQuery = query(
-                collection(db, publicCollectionPath), 
-                where("devoteeId", "==", targetDevoteeId), // Filter by the Devotee's declared name
-                orderBy("timestamp", "desc")
-            );
-            
-            // Use onSnapshot for real-time updates and to fetch initial data
-            unsubscribeReports = onSnapshot(reportsQuery, (snapshot) => {
-                showLoading(false);
-                const reports = [];
-                snapshot.forEach(doc => {
-                    reports.push({ id: doc.id, ...doc.data() });
-                });
-
-                renderHostReports(targetDevoteeId, reports);
-            }, (error) => {
-                showLoading(false);
-                console.error("Error fetching devotee reports:", error);
-                // With public read rules, this usually means a database or network error.
-                showMessage('host-message', 'Error fetching reports. Check console for database error.', 'text-red-600');
-                
-                document.getElementById('devotee-profile-card').classList.add('hidden');
-                document.getElementById('reports-container').innerHTML = '';
-            });
-        }
-
-        function renderHostReports(targetDevoteeId, reports) {
-            const profileCard = document.getElementById('devotee-profile-card');
-            const reportsContainer = document.getElementById('reports-container');
-            const noReportsMessage = document.getElementById('no-reports-message');
-            
-            document.getElementById('fetched-devotee-id').textContent = targetDevoteeId;
-            profileCard.classList.remove('hidden');
-            reportsContainer.innerHTML = ''; // Clear previous reports
-
-            if (reports.length === 0) {
-                noReportsMessage.classList.remove('hidden');
-                return;
-            } else {
-                noReportsMessage.classList.add('hidden');
-            }
-
-            reports.forEach(report => {
-                const date = report.date || 'N/A';
-                const dateDisplay = new Date(report.timestamp?.toDate()).toLocaleDateString() || date;
-                
-                // Determine status for R/Y/G indicator (example logic)
-                let statusColor = 'bg-red-500'; // Default: Red
-                if (report.rounds >= 8 && report.rounds < 16) {
-                    statusColor = 'bg-yellow-500'; // Yellow
-                } else if (report.rounds >= 16) {
-                    statusColor = 'bg-green-500'; // Green
+                // 3. Sign out the current user to clear the session ID
+                if (auth.currentUser) {
+                    await signOut(auth);
+                    console.log("Current user signed out.");
                 }
 
-                // Calculate totals
-                const totalReading = (report.spReadingDuration || 0) + (report.personalReadingDuration || 0);
-                const totalStudies = (report.studyDuration || 0);
-                const totalHearing = (report.hearingDuration || 0);
+                // 4. Immediately sign in a new anonymous user
+                const userCredential = await signInAnonymously(auth);
+                userId = userCredential.user.uid;
+                console.log("New anonymous user signed in:", userId);
 
-                const reportCard = document.createElement('div');
-                reportCard.className = 'sadhana-card border-l-4 border-gray-400 p-4 relative';
-                reportCard.innerHTML = `
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="text-lg font-bold text-gray-800">Report for: ${dateDisplay}</h4>
-                        <span class="w-4 h-4 rounded-full ${statusColor}" title="Rounds Status"></span>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                        <!-- Left Column -->
-                        <div>
-                            <p class="font-semibold text-orange-600"><span class="text-green-700 font-extrabold mr-1 text-base">HARE KRISHNA</span> Chanting</p>
-                            <p>Rounds: <span class="font-mono">${report.rounds}</span></p>
-                            <p>Finished: <span class="font-mono">${report.lastRoundTime || 'N/A'}</span></p>
-                            
-                            <p class="font-semibold text-orange-600 mt-2"><i class="fas fa-book mr-1"></i> Reading & Studies</p>
-                            <p>Total Reading: ${totalReading} min</p>
-                            <p>SP Book: ${report.spBookName || 'N/A'} (${report.spReadingDuration} min)</p>
-                            <p>Total Studies: ${totalStudies} min</p>
+                // 5. Explicitly render the form now that we have a fresh user ID
+                renderForm();
 
-                            <p class="font-semibold text-orange-600 mt-2"><i class="fas fa-headphones mr-1"></i> Hearing</p>
-                            <p>Duration: ${totalHearing} min</p>
-                            <p>Topic: ${report.hearingTopic || 'N/A'}</p>
-                        </div>
+            } catch (error) {
+                console.error("Error creating new session:", error);
+                loadingState.innerHTML = `<p class="text-red-600">नया सत्र शुरू करने में त्रुटि: ${error.message}</p>`;
+            }
+        }
+        window.handleNewRegistration = handleNewRegistration; // Make it globally accessible
 
-                        <!-- Right Column -->
-                        <div>
-                            <p class="font-semibold text-orange-600"><i class="fas fa-hands-helping mr-1"></i> Service</p>
-                            <p>Details: ${report.serviceDetails || 'None Reported'}</p>
+        /**
+         * Listens to the Firestore document for the user's registration data (the entry card).
+         */
+        function listenForEntryCard() {
+            // CRITICAL GUARD: Do not proceed without database and user ID.
+            if (!db || !userId) {
+                console.warn("Attempted to listenForEntryCard before authentication was ready.");
+                return;
+            }
 
-                            <p class="font-semibold text-orange-600 mt-2"><i class="fas fa-bed mr-1"></i> Sleep</p>
-                            <p>Wake Up: ${report.wakeUpTime || 'N/A'}</p>
-                            <p>Total Hours: ${report.sleepDuration || 'N/A'}</p>
-                            <p>Day Rest: ${report.dayRestTime || 'None Reported'}</p>
+            // Path: /artifacts/{appId}/users/{userId}/registrations/entryCard (Private Data)
+            const cardPath = `artifacts/${appId}/users/${userId}/registrations/entryCard`;
+            const cardRef = doc(db, cardPath);
 
-                            <p class="font-semibold text-orange-600 mt-2"><i class="fas fa-sticky-note mr-1"></i> Devotee Comments</p>
-                            <p class="italic text-gray-600">${report.comments || 'No comments left.'}</p>
-                        </div>
-                    </div>
-                `;
-                reportsContainer.appendChild(reportCard);
+            // This listener ensures we show the card if it exists, otherwise the form.
+            onSnapshot(cardRef, (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    // Data found: Show the Entry Card
+                    const data = docSnapshot.data();
+                    console.log("Entry data retrieved:", data);
+                    renderEntryCard(data);
+                } else {
+                    // No data found: Show the registration form
+                    console.log("No existing registration found. Showing form.");
+                    renderForm();
+                }
+            }, (error) => {
+                // Log the error for debugging
+                console.error("Error listening to card document:", error.message);
+                
+                // If permissions are denied, we still try to render the form, 
+                // but inform the user of the security issue.
+                if (error.code === 'permission-denied') {
+                    console.error("Permission denied to read Firestore data. Check security rules.");
+                    showError("सुरक्षा त्रुटि के कारण मौजूदा पंजीकरण प्राप्त नहीं हो सका। कृपया पुनः पंजीकरण का प्रयास करें।");
+                }
+                renderForm();
             });
         }
+
+        /**
+         * Handles the form submission to save data to Firestore.
+         * Data is saved to BOTH private and public collections for Excel export.
+         * @param {Event} e - The form submit event.
+         */
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            if (!userId) {
+                showError("प्रमाणीकरण पूरा नहीं हुआ है। कृपया प्रतीक्षा करें और पुनः प्रयास करें।");
+                return;
+            }
+
+            submitButton.disabled = true;
+            submitButton.textContent = 'प्रस्तुत हो रहा है...'; // Submitting...
+            hideError();
+
+            try {
+                const formData = new FormData(form);
+                const timestamp = new Date().toISOString();
+                const data = {
+                    name: formData.get('name').trim(),
+                    contact: formData.get('contact').trim(),
+                    address: formData.get('address').trim(),
+                    timestamp: timestamp,
+                    userId: userId, 
+                };
+                
+                if (!data.name || !data.contact || !data.address) {
+                    throw new Error("सभी फ़ील्ड आवश्यक हैं।"); // All fields are required.
+                }
+
+                // 1. Save card privately (for retrieval when user scans QR code again)
+                // Path: /artifacts/{appId}/users/{userId}/registrations/entryCard
+                const privateCardPath = `artifacts/${appId}/users/${userId}/registrations/entryCard`;
+                await setDoc(doc(db, privateCardPath), data);
+                
+                // 2. Save data publicly (for organizer export to Excel/CSV) - THIS REQUIRES THE PUBLIC CREATE RULE
+                // Path: /artifacts/{appId}/public/data/attendees/{unique_doc_id}
+                const publicAttendeeCollection = collection(db, `artifacts/${appId}/public/data/attendees`);
+                // Use addDoc to automatically generate a unique ID for each new entry
+                await addDoc(publicAttendeeCollection, data);
+
+                console.log("Registration saved successfully to private and public collections!");
+                renderEntryCard(data); // Render card immediately
+                
+
+            } catch (error) {
+                console.error("Registration failed:", error);
+                showError(`पंजीकरण विफल रहा: ${error.message}`); // Registration failed
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'प्रवेश कार्ड बनाएँ'; // Generate Entry Card
+            }
+        }
+
+        /**
+         * Downloads the entry card as a PNG image using html2canvas.
+         */
+        function downloadCard() {
+            const cardElement = document.getElementById('entry-card');
+            const cardName = document.getElementById('card-name').textContent || 'अतिथि'; // Guest
+
+            if (typeof html2canvas === 'undefined') {
+                console.error("html2canvas लाइब्रेरी लोड नहीं हुई है।"); // html2canvas library is not loaded.
+                return;
+            }
+
+            html2canvas(cardElement, {
+                scale: 2, // Increase scale for better resolution
+                logging: false,
+                useCORS: true 
+            }).then(canvas => {
+                const image = canvas.toDataURL('image/png');
+
+                const link = document.createElement('a');
+                link.href = image;
+                link.download = `${cardName.replace(/\s+/g, '_')}_EventPass.png`;
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                console.log("एंट्री कार्ड डाउनलोड शुरू हो गया।"); // Entry card download triggered.
+            }).catch(error => {
+                console.error("कार्ड बनाने या डाउनलोड करने में त्रुटि:", error); // Error generating or downloading card
+                // Custom error message for user
+                document.getElementById('download-error')?.remove(); 
+                
+                appContainer.insertAdjacentHTML('afterbegin', `
+                    <div id="download-error" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm text-center">
+                            <p class="text-red-600 font-semibold mb-3">डाउनलोड विफल रहा</p> <!-- Download Failed --><p class="text-sm text-gray-700">कार्ड छवि उत्पन्न नहीं हो सकी। कृपया पुनः प्रयास करें।</p> <!-- Could not generate the card image. Please try again. --><button onclick="document.getElementById('download-error').remove()" class="mt-4 bg-red-500 text-white py-2 px-4 rounded-lg">बंद करें</button> <!-- Close --></div>
+                    </div>
+                `);
+            });
+        }
+        window.downloadCard = downloadCard; // Make it globally accessible to the onclick event
+
+        // --- Utility Functions ---
+
+        /**
+         * Formats ISO 8601 string to a readable date and time.
+         * @param {string} isoString - The ISO 8601 date string.
+         */
+        function formatTimestamp(isoString) {
+            try {
+                return new Date(isoString).toLocaleString('en-US', { /* Changed locale to English (US) */
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                });
+            } catch {
+                return "Date N/A"; // Changed fallback to English for consistency
+            }
+        }
+
+
+        // --- Rendering Functions ---
+
+        function renderForm() {
+            loadingState.classList.add('hidden');
+            cardSection.classList.add('hidden');
+            formSection.classList.remove('hidden');
+        }
+
+        function renderEntryCard(data) {
+            document.getElementById('card-name').textContent = data.name;
+            document.getElementById('card-contact').textContent = data.contact;
+            document.getElementById('card-address').textContent = data.address;
+            document.getElementById('card-user-id').textContent = data.userId; 
+            document.getElementById('card-timestamp').textContent = formatTimestamp(data.timestamp);
+            
+            loadingState.classList.add('hidden');
+            formSection.classList.add('hidden');
+            cardSection.classList.remove('hidden');
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorMessage.classList.add('hidden');
+        }
+
+        // --- Event Listeners and Initial Call ---
         
-        // Start Firebase initialization
-        initializeFirebase();
+        form.addEventListener('submit', handleFormSubmit);
+
+        // Start the application lifecycle
+        initializeAppAndAuth();
+
     </script>
 </body>
 </html>
-
-
